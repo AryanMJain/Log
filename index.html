@@ -43,7 +43,24 @@ input::placeholder{color:var(--ink3)}
 .chip .next{font-size:11px;font-weight:700;margin-left:6px;opacity:.8}
 /* cards */
 .card{background:var(--card);border-radius:var(--r);padding:14px 14px 10px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.card.done{opacity:.55}
+.card.done{padding:12px 14px}
+.card.done .ex-name{font-size:15px}
+.done-row{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left}
+.done-row .sum{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;margin-top:2px}
+.done-row .ok{color:var(--ok);flex:none;width:22px;height:22px}
+.same{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--teal);background:var(--tint);padding:8px 12px;border-radius:999px;margin-top:8px}
+.warm{display:flex;gap:8px;margin-top:8px}
+.warm button{flex:1;padding:10px 6px;border-radius:12px;background:var(--field);font-size:13px;font-weight:600;color:var(--ink2);line-height:1.2}
+.warm button.on{background:var(--tint);color:var(--teal);box-shadow:inset 0 0 0 1.5px var(--teal)}
+.strip{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--card);border-radius:var(--r);padding:10px 14px;margin:10px 0 2px}
+.strip .days{display:flex;gap:6px}
+.strip .dd{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--ink3)}
+.strip .dd i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.strip .dd i.on{background:var(--teal)}.strip .dd.today{color:var(--teal)}
+.strip .cnt{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.strip .cnt small{color:var(--ink2);font-weight:500}
+.sun{display:flex;gap:8px;margin-top:10px;align-items:center}
+.sun input{flex:1;padding:12px;text-align:center}
 .ex-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .ex-name{font-size:17px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
 .ex-name .star{color:var(--teal)}
@@ -227,9 +244,15 @@ let W=DB.draft&&DB.draft.date===today()?DB.draft:null; // in-progress workout
 if(!W)W=newWorkout(nextDay());
 function newWorkout(dayId){const day=PLAN.find(d=>d.id===dayId),prev=lastSession(dayId);const ex={};
   day.ex.forEach(e=>{ex[e.n]={sets:Array.from({length:e.sets},(_,i)=>{const ps=prev?.ex?.[e.n]?.sets?.[i];return{k:ps?.k??"",r:ps?.r??"",d:false}})}});
-  return{day:dayId,date:today(),ex,note:"",start:null}}
+  return{day:dayId,date:today(),ex,note:"",start:null,warm:[false,false,false]}}
+if(!W.warm)W.warm=[false,false,false];
+let expanded=new Set(),scrollTo=null;
 function draft(){DB.draft=W;save()}
-let restEnd=null,restH=null;
+let restEnd=null,restH=null,wake=null,actx=null;
+async function keepAwake(){try{if(!wake&&navigator.wakeLock&&W.start){wake=await navigator.wakeLock.request("screen");wake.addEventListener("release",()=>{wake=null})}}catch(e){}}
+function releaseAwake(){try{wake&&wake.release()}catch(e){}wake=null}
+function primeAudio(){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();if(actx.state==="suspended")actx.resume()}catch(e){}}
+function beep(){try{if(!actx)return;const t=actx.currentTime;[0,.18,.36].forEach(o=>{const g=actx.createGain(),osc=actx.createOscillator();osc.type="sine";osc.frequency.value=880;g.gain.setValueAtTime(0,t+o);g.gain.linearRampToValueAtTime(.4,t+o+.02);g.gain.exponentialRampToValueAtTime(.001,t+o+.15);osc.connect(g);g.connect(actx.destination);osc.start(t+o);osc.stop(t+o+.16)})}catch(e){}}
 
 // ================= LOG =================
 function renderHdr(){
@@ -240,18 +263,28 @@ function renderHdr(){
 function renderLog(){
   const day=PLAN.find(d=>d.id===W.day),prev=lastSession(W.day),nd=nextDay();
   let h=`<div class="chips">${PLAN.map(d=>`<button class="chip ${d.id===W.day?"on":""}" data-day="${d.id}">${d.short}${d.id===nd&&d.id!==W.day?'<span class="next">NEXT</span>':""}</button>`).join("")}</div>`;
+  // week strip
+  const mon=mondayOf(today());const wd=Array.from({length:7},(_,i)=>{const d=new Date(mon+"T00:00");d.setDate(d.getDate()+i);return iso(d)});
+  const gymN=wd.filter(d=>DB.days[d]?.gym).length;
+  h+=`<div class="strip"><div class="days">${wd.map((d,i)=>`<div class="dd ${d===today()?"today":""}"><i class="${DB.days[d]?.gym?"on":""}"></i>${"MTWTFSS"[i]}</div>`).join("")}</div><div class="cnt">${gymN}<small>/${DB.targets.gym} this week</small></div></div>`;
   const total=day.ex.reduce((a,e)=>a+e.sets,0),done=day.ex.reduce((a,e)=>a+W.ex[e.n].sets.filter(s=>s.d).length,0);
   h+=`<div class="prog"><i style="width:${total?done/total*100:0}%"></i></div><div class="hint">${done}/${total} sets · ${prev?`prefilled from ${fmt(prev.date)}`:"first time — enter working weights"}. Tick a set when done; the rest timer starts.</div>`;
   if((W.day==="d1"||W.day==="d2")&&DB.sessions.length<8)h+=`<div class="hint" style="color:var(--warn)">Weeks 1–2: 60–70% load, 2 sets, 12–15 reps.</div>`;
+  if(W.day!=="int"){const WU=["90/90 hips ×10","Knee-to-wall ×10","T-spine ×8 + 2 light sets"];const wn=W.warm.filter(Boolean).length;
+    h+=`<div class="card ${wn===3?"done":""}"><div class="ex-head"><div><div class="ex-name">Warm-up</div><div class="ex-meta">8 min${wn===3?" · done":""}</div></div>${wn===3?`<svg class="ok" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M5 12.5l4.5 4.5L19 7"/></svg>`:""}</div>${wn===3?"":`<div class="warm">${WU.map((t,i)=>`<button class="${W.warm[i]?"on":""}" data-warm="${i}">${t}</button>`).join("")}</div>`}</div>`}
   let open=null;
   day.ex.forEach((e,i)=>{
     const p=prev?.ex?.[e.n],up=topped(e,p),w=W.ex[e.n],allDone=w.sets.every(s=>s.d);
     if(e.ss&&e.ss!==open){if(open)h+=`</div>`;open=e.ss;h+=`<div class="ss-lbl">Superset · no rest between · ${day.ex.find(x=>x.ss===e.ss&&x.rest)?.rest||75} s after</div><div class="ss-wrap">`}
     if(!e.ss&&open){h+=`</div>`;open=null}
-    h+=`<div class="card ${allDone?"done":""}"><div class="ex-head"><div><div class="ex-name">${esc(e.n)}${e.star?' <span class="star">★</span>':""}</div><div class="ex-meta">${target(e)}${e.cue?` · ${esc(e.cue)}`:""}</div></div>${up?'<span class="tag up">Add weight</span>':e.fn?'<span class="tag fn">Functional</span>':""}</div>
+    if(allDone&&!expanded.has(i)){const sum=w.sets.map(x=>`${x.k!==""&&!e.noKg?x.k+"×":""}${x.r}`).join(" · ");
+      h+=`<div class="card done"><button class="done-row" data-expand="${i}"><div><div class="ex-name">${esc(e.n)}${e.star?' <span class="star">★</span>':""}</div><div class="sum">${sum}</div></div><svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button></div>`;return}
+    const canSame=p&&!allDone&&p.sets.some(x=>x.k!==""||x.r!=="");
+    h+=`<div class="card" id="ex-${i}"><div class="ex-head"><div><div class="ex-name">${esc(e.n)}${e.star?' <span class="star">★</span>':""}</div><div class="ex-meta">${target(e)}${e.cue?` · ${esc(e.cue)}`:""}</div></div>${up?'<span class="tag up">Add weight</span>':e.fn?'<span class="tag fn">Functional</span>':""}</div>
+    ${canSame?`<button class="same" data-same="${i}">${ICON.check.replace('<svg','<svg width="14" height="14"')} Same as last time</button>`:""}
     <div class="cols"><span>Set</span><span>${e.noKg?"":(e.kgLabel||"kg")}</span><span>${e.unit||"reps"}</span><span></span></div>`;
     w.sets.forEach((s,j)=>{const ps=p?.sets?.[j];const last=ps&&(ps.k!==""||ps.r!=="")?`${ps.k!==""?ps.k+"×":""}${ps.r}`:"";
-      h+=`<div class="set ${s.d?"done":""}"><div class="num">${j+1}${last?`<span class="last">${last}</span>`:""}</div>
+      h+=`<div class="set ${s.d?"done":""}" id="s-${i}-${j}"><div class="num">${j+1}${last?`<span class="last">${last}</span>`:""}</div>
       ${e.noKg?"<div></div>":`<div class="step ${s.k===""?"empty":""}"><button data-st="k" data-i="${i}" data-j="${j}" data-v="-1">−</button><input inputmode="decimal" data-in="k" data-i="${i}" data-j="${j}" value="${s.k}" placeholder="${ps?.k??"–"}"><button data-st="k" data-i="${i}" data-j="${j}" data-v="1">+</button></div>`}
       <div class="step ${s.r===""?"empty":""}"><button data-st="r" data-i="${i}" data-j="${j}" data-v="-1">−</button><input inputmode="numeric" data-in="r" data-i="${i}" data-j="${j}" value="${s.r}" placeholder="${ps?.r??"–"}"><button data-st="r" data-i="${i}" data-j="${j}" data-v="1">+</button></div>
       <button class="tick ${s.d?"on":""}" data-tick="${i}" data-j="${j}" aria-label="set done">${ICON.check}</button></div>`});
@@ -270,16 +303,22 @@ function tickSet(i,j){const day=PLAN.find(d=>d.id===W.day),e=day.ex[i],s=W.ex[e.
   if(!s.d){ // fill blanks from previous set or last session before marking done
     const from=j>0?W.ex[e.n].sets[j-1]:null,ps=prev?.ex?.[e.n]?.sets?.[j];
     if(s.k===""&&!e.noKg)s.k=from?.k??ps?.k??"";if(s.r==="")s.r=from?.r??ps?.r??"";
-    if(!W.start)W.start=Date.now();
+    if(!W.start)W.start=Date.now();primeAudio();keepAwake();
     // next set inherits values if blank
     const nx=W.ex[e.n].sets[j+1];if(nx&&nx.k===""&&nx.r===""){nx.k=s.k;nx.r=s.r}
     s.d=true;const rest=e.rest??75;if(rest>0)startRest(rest);else stopRest();
-  }else{s.d=false}
+    scrollTo=nextOpen(i,j);
+  }else{s.d=false;expanded.add(i)}
   draft();render();
 }
+function nextOpen(i,j){const day=PLAN.find(d=>d.id===W.day);for(let a=i;a<day.ex.length;a++){const w=W.ex[day.ex[a].n];for(let b=(a===i?j+1:0);b<w.sets.length;b++)if(!w.sets[b].d)return`s-${a}-${b}`}return null}
+function sameAsLast(i){const day=PLAN.find(d=>d.id===W.day),e=day.ex[i],prev=lastSession(W.day),p=prev?.ex?.[e.n];if(!p)return;
+  W.ex[e.n].sets.forEach((s,j)=>{const ps=p.sets[j];if(ps){s.k=e.noKg?"":ps.k;s.r=ps.r}s.d=true});
+  if(!W.start)W.start=Date.now();primeAudio();keepAwake();const rest=e.rest??75;if(rest>0)startRest(rest);
+  scrollTo=nextOpen(i,W.ex[e.n].sets.length-1);draft();render()}
 function startRest(sec){restEnd=Date.now()+sec*1000;clearInterval(restH);restH=setInterval(tickRest,250);renderBar();tickRest()}
 function stopRest(){restEnd=null;clearInterval(restH);renderBar()}
-function tickRest(){if(!restEnd)return;const left=Math.ceil((restEnd-Date.now())/1000);const el=$("#restT");if(el)el.textContent=mmss(Math.max(0,left));if(left<=0){stopRest();toast("Rest over — go")}
+function tickRest(){if(!restEnd)return;const left=Math.ceil((restEnd-Date.now())/1000);const el=$("#restT");if(el)el.textContent=mmss(Math.max(0,left));if(left<=0){stopRest();beep();toast("Rest over — go")}
   const e2=$("#elapsed");if(e2&&W.start){const s=Math.floor((Date.now()-W.start)/1000);e2.textContent=mmss(s);e2.style.color=s>=70*60?"var(--warn)":""}}
 setInterval(()=>{const e2=$("#elapsed");if(e2&&W.start&&!restEnd){const s=Math.floor((Date.now()-W.start)/1000);e2.textContent=mmss(s);e2.style.color=s>=70*60?"var(--warn)":""}},1000);
 function finish(){const day=PLAN.find(d=>d.id===W.day);const ex={};let any=0;
@@ -289,7 +328,7 @@ function finish(){const day=PLAN.find(d=>d.id===W.day);const ex={};let any=0;
   DB.sessions=DB.sessions.filter(s=>!(s.day===W.day&&s.date===W.date));
   DB.sessions.push({id:W.day+"-"+W.date,day:W.day,date:W.date,ex,note:W.note,mins});
   if(W.day!=="int"){DB.days[W.date]=DB.days[W.date]||{};DB.days[W.date].gym=true;DB.lastDay=W.day}
-  DB.draft=null;stopRest();W=newWorkout(nextDay());save();toast(`Saved · ${mins?mins+" min":"done"}`);render();
+  DB.draft=null;stopRest();releaseAwake();expanded=new Set();W=newWorkout(nextDay());save();toast(`Saved · ${mins?mins+" min":"done"}`);render();
 }
 
 // ================= CALENDAR =================
@@ -298,7 +337,8 @@ function renderCal(){
   const title=selDay===t?"Today":new Date(selDay+"T00:00").toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"short"});
   let h=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><b style="font-size:17px">${title}</b>${selDay!==t?`<button style="color:var(--teal);font-weight:600;font-size:14px" data-sel="${t}">Back to today</button>`:""}</div>
   <div class="today">${HABITS.map(([k,l,c])=>`<button class="hab ${v[k]?"on":""}" style="--c:${c}" data-hab="${k}"><span class="dot">${ICON.check}</span>${l}</button>`).join("")}</div>
-  <input class="note" data-dnote placeholder="Note for the day" value="${esc(v.note||"")}"></div>`;
+  <input class="note" data-dnote placeholder="Note for the day" value="${esc(v.note||"")}">
+  ${new Date(selDay+"T00:00").getDay()===0?(()=>{const w=DB.weekly.find(x=>x.date===selDay);return w?`<div class="hint" style="margin-top:10px;color:var(--ok)">Weigh-in saved: ${w.bw||"—"} kg${w.waist?` · ${w.waist} cm`:""}</div>`:`<div class="hint" style="margin-top:10px"><b>Sunday weigh-in.</b> Average of this week's morning readings.</div><div class="sun"><input inputmode="decimal" id="sbw" placeholder="kg"><input inputmode="decimal" id="swaist" placeholder="waist cm (monthly)"><button class="btn" data-act="saveSun">Save</button></div>`})():""}</div>`;
   // month grid
   const [y,m]=calMonth.split("-").map(Number);const first=new Date(y,m-1,1),n=new Date(y,m,0).getDate(),lead=(first.getDay()+6)%7;
   h+=`<div class="card"><div class="calhead"><button data-nav="-1">‹</button><b>${first.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}</b><button data-nav="1">›</button></div>
@@ -351,15 +391,20 @@ function render(){
   $("#tabs").innerHTML=[["log","Log",ICON.log],["cal","Calendar",ICON.cal],["prog","Progress",ICON.prog]].map(([k,l,i])=>`<button class="tab ${tab===k?"on":""}" data-tab="${k}">${i}${l}</button>`).join("");
   $("#view").innerHTML=tab==="log"?renderLog():tab==="cal"?renderCal():renderProg();
   renderBar();
+  if(scrollTo){const el=document.getElementById(scrollTo);scrollTo=null;if(el)requestAnimationFrame(()=>el.scrollIntoView({block:"center",behavior:"smooth"}))}
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b)return;const d=b.dataset;
   if(d.tab){tab=d.tab;window.scrollTo(0,0);render()}
-  else if(d.day){if(d.day!==W.day){const has=Object.values(W.ex).some(x=>x.sets.some(s=>s.d));if(has&&!confirm("Switch day? Ticked sets on this workout will be kept as a draft only until you switch back."))return;W=newWorkout(d.day);draft();render()}}
+  else if(d.day){if(d.day!==W.day){const has=Object.values(W.ex).some(x=>x.sets.some(s=>s.d));if(has&&!confirm("Switch day? Ticked sets on this workout will be kept as a draft only until you switch back."))return;W=newWorkout(d.day);expanded=new Set();draft();render()}}
   else if(d.st){const day=PLAN.find(x=>x.id===W.day),ex=day.ex[d.i],s=W.ex[ex.n].sets[d.j];s[d.st]=stepVal(ex,d.st,s[d.st],Number(d.v));draft();render()}
   else if(d.tick!==undefined)tickSet(Number(d.tick),Number(d.j));
+  else if(d.same!==undefined)sameAsLast(Number(d.same));
+  else if(d.expand!==undefined){expanded.add(Number(d.expand));render()}
+  else if(d.warm!==undefined){W.warm[Number(d.warm)]=!W.warm[Number(d.warm)];if(!W.start&&W.warm.some(Boolean))W.start=Date.now();primeAudio();keepAwake();draft();render()}
+  else if(d.act==="saveSun"){const bw=$("#sbw").value.trim(),waist=$("#swaist").value.trim();if(!bw&&!waist)return toast("Enter a number");DB.weekly=DB.weekly.filter(x=>x.date!==selDay);DB.weekly.push({date:selDay,bw,waist});save();toast("Saved");render()}
   else if(d.act==="finish")finish();
-  else if(d.act==="discard"){if(confirm("Discard this workout?")){W=newWorkout(W.day);DB.draft=null;stopRest();save();render()}}
+  else if(d.act==="discard"){if(confirm("Discard this workout?")){W=newWorkout(W.day);DB.draft=null;stopRest();releaseAwake();expanded=new Set();save();render()}}
   else if(d.act==="date"){const v=prompt("Session date (YYYY-MM-DD)",W.date);if(v&&/^\d{4}-\d{2}-\d{2}$/.test(v)){W.date=v;draft();render()}}
   else if(d.act==="skip")stopRest();
   else if(d.act==="rest+"){restEnd+=30000;tickRest()}
@@ -380,7 +425,7 @@ document.addEventListener("change",e=>{const d=e.target.dataset;
   if(d.dnote!==undefined){const v=DB.days[selDay]=DB.days[selDay]||{};v.note=e.target.value;save()}
   if(d.tgt){DB.targets[d.tgt]=Number(e.target.value)||0;save();render()}
 });
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&tab==="log")render()});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){keepAwake();if(tab==="log")render()}});
 render();
 </script>
 </body>
