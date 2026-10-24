@@ -440,8 +440,10 @@ function renderProg(){
   const ws=[...DB.weekly].sort((a,b)=>a.date<b.date?-1:1),f=ws[0],l=ws[ws.length-1];
   h+=`<div class="card"><b style="font-size:17px">Bodyweight & waist</b><div class="hint">Weight weekly (average of morning weigh-ins). Waist at navel monthly. Week 12: lifts up but waist not down 2 cm → carbs −250 kcal.</div>
   <div class="frow"><input type="date" id="wdate" value="${today()}" style="font-size:14px"><input inputmode="decimal" id="wbw" placeholder="kg"><input inputmode="decimal" id="wwaist" placeholder="waist cm"></div><button class="btn wide ghost" data-act="saveW">Save</button>`;
-  if(f&&l&&f!==l){const dw=(Number(l.bw||0)-Number(f.bw||0)).toFixed(1),wz=ws.filter(x=>x.waist),wd=wz.length>1?(Number(wz[wz.length-1].waist)-Number(wz[0].waist)).toFixed(1):null;
-    h+=`<div class="stat">Since ${fmt(f.date)}: weight <b>${dw>0?"+":""}${dw} kg</b>${wd!==null?` · waist <b style="color:${wd<=0?"var(--ok)":"var(--warn)"}">${wd>0?"+":""}${wd} cm</b>`:""}</div>`}
+  // Compare only entries that actually have that number (a waist-only entry must not read as 0 kg)
+  const chg=k=>{const z=ws.filter(x=>x[k]);return z.length>1?(Number(z[z.length-1][k])-Number(z[0][k])).toFixed(1):null};
+  if(f&&l&&f!==l){const dw=chg("bw"),wd=chg("waist");
+    if(dw!==null||wd!==null)h+=`<div class="stat">Since ${fmt(f.date)}: ${[dw!==null?`weight <b>${dw>0?"+":""}${dw} kg</b>`:"",wd!==null?`waist <b style="color:${wd<=0?"var(--ok)":"var(--warn)"}">${wd>0?"+":""}${wd} cm</b>`:""].filter(Boolean).join(" · ")}</div>`}
   h+=ws.slice().reverse().slice(0,6).map(w=>`<div class="sess"><span>${fmt(w.date)}</span><span class="r">${w.bw?w.bw+" kg":"—"} · ${w.waist?w.waist+" cm":"—"}</span></div>`).join("")+`</div>`;
   h+=`<div class="card"><b style="font-size:17px">Sessions</b>`;
   const ss=[...DB.sessions].sort((a,b)=>a.date<b.date?1:-1);if(!ss.length)h+=`<div class="hint">Nothing saved yet.</div>`;
@@ -471,7 +473,7 @@ document.addEventListener("click",e=>{
   else if(d.same!==undefined)sameAsLast(Number(d.same));
   else if(d.expand!==undefined){expanded.add(Number(d.expand));render()}
   else if(d.warm!==undefined){W.warm[Number(d.warm)]=!W.warm[Number(d.warm)];if(!W.start&&W.warm.some(Boolean))W.start=Date.now();primeAudio();keepAwake();draft();render()}
-  else if(d.act==="saveSun"){const bw=$("#sbw").value.trim(),waist=$("#swaist").value.trim();if(!bw&&!waist)return toast("Enter a number");DB.weekly=DB.weekly.filter(x=>x.date!==selDay);DB.weekly.push({date:selDay,bw,waist});save();toast("Saved");render()}
+  else if(d.act==="saveSun"){const bw=$("#sbw").value.trim(),waist=$("#swaist").value.trim();if(!bw&&!waist)return toast("Enter a number");const old=DB.weekly.find(x=>x.date===selDay)||{};DB.weekly=DB.weekly.filter(x=>x.date!==selDay);DB.weekly.push({...old,date:selDay,...(bw?{bw}:{}),...(waist?{waist}:{})});save();toast("Saved");render()}
   else if(d.padd)pAdd(pDay,d.padd);
   else if(d.act==="pcus"){const el=$("#pcus");pAdd(pDay,el.value.trim())}
   else if(d.act==="pundo")pRemove(pDay,pList(pDay).length-1);
@@ -486,7 +488,7 @@ document.addEventListener("click",e=>{
   else if(d.nav){const [y,m]=calMonth.split("-").map(Number);calMonth=iso(new Date(y,m-1+Number(d.nav),1)).slice(0,7);render()}
   else if(d.sel){selDay=d.sel;render()}
   else if(d.hab){const v=DB.days[selDay]=DB.days[selDay]||{};v[d.hab]=!v[d.hab];save();render()}
-  else if(d.act==="saveW"){const dt=$("#wdate").value,bw=$("#wbw").value.trim(),waist=$("#wwaist").value.trim();if(!bw&&!waist)return toast("Enter a number");DB.weekly=DB.weekly.filter(x=>x.date!==dt);DB.weekly.push({date:dt,bw,waist});save();toast("Saved");render()}
+  else if(d.act==="saveW"){const dt=$("#wdate").value,bw=$("#wbw").value.trim(),waist=$("#wwaist").value.trim();if(!bw&&!waist)return toast("Enter a number");const old=DB.weekly.find(x=>x.date===dt)||{};DB.weekly=DB.weekly.filter(x=>x.date!==dt);DB.weekly.push({...old,date:dt,...(bw?{bw}:{}),...(waist?{waist}:{})});save();toast("Saved");render()}
   else if(d.del){if(confirm("Delete this session?")){DB.sessions=DB.sessions.filter(s=>s.id!==d.del);save();render()}}
   else if(d.act==="copy"){navigator.clipboard?.writeText(JSON.stringify(DB)).then(()=>toast("Copied")).catch(()=>{$("#bk").select();toast("Select all, then copy")})}
   else if(d.act==="restore"){const ta=$("#bk");ta.removeAttribute("readonly");const v=prompt("Paste your backup text");if(!v)return;try{const o=JSON.parse(v);if(!o.sessions)throw 0;DB={...DB,...o};save();toast("Restored");render()}catch{toast("Not a valid backup")}}

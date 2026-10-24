@@ -108,6 +108,7 @@ input::placeholder{color:var(--ink3)}
 .btn.danger{background:var(--warntint);color:var(--warn)}
 /* today card / calendar */
 .today{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.today .hab:last-child:nth-child(odd){grid-column:1/-1}
 .hab{display:flex;align-items:center;gap:10px;padding:14px 12px;border-radius:14px;background:var(--field);font-weight:600;font-size:15px;color:var(--ink2);min-height:56px}
 .hab .dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none;color:#fff;transition:background-color 160ms ease,border-color 160ms ease}
 .hab .dot svg{width:14px;height:14px;opacity:0;transform:scale(.6);transition:opacity 160ms var(--ease),transform 200ms var(--ease)}
@@ -125,21 +126,21 @@ input::placeholder{color:var(--ink3)}
 .day.sel{box-shadow:inset 0 0 0 2px var(--teal)}
 .day.today .d{color:var(--teal)}
 .day .d{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
-.dots{display:flex;gap:3px}
-.dots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.dots{display:flex;gap:2px}
+.dots i{width:5px;height:5px;border-radius:50%;background:var(--line)}
 .dots i.on{background:var(--c)}
 .legend{display:flex;gap:12px;font-size:12px;color:var(--ink2);margin:10px 0 0;flex-wrap:wrap}
 .legend span{display:flex;align-items:center;gap:5px}
 .legend i{width:8px;height:8px;border-radius:50%}
-.wk{display:grid;grid-template-columns:56px repeat(4,1fr);gap:4px;font-size:14px;padding:8px 0;border-top:1px solid var(--line);text-align:center;font-variant-numeric:tabular-nums}
+.wk{display:grid;grid-template-columns:52px repeat(5,1fr);gap:4px;font-size:14px;padding:8px 0;border-top:1px solid var(--line);text-align:center;font-variant-numeric:tabular-nums}
 .wk.h{color:var(--ink3);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;border-top:none}
 .wk .hit{color:var(--ok);font-weight:700}.wk .miss{color:var(--ink3)}
 .stat{background:var(--tint);border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.5;margin:10px 0}
 .stat b{font-variant-numeric:tabular-nums}
-.big{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;margin:8px 0}
+.big{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;margin:8px 0}
 .big .n{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--teal);font-variant-numeric:tabular-nums}
 .big .l{font-size:11px;color:var(--ink2);font-weight:600}
-.tgt{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tgt{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .tgt label{font-size:11px;color:var(--ink2);text-align:center;font-weight:600}
 .tgt input{width:100%;text-align:center;padding:10px 4px;margin-top:4px;font-weight:700}
 h2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin:18px 0 6px}
@@ -183,48 +184,55 @@ textarea{width:100%;font-family:inherit;font-size:12px;border:none;background:va
 <div class="toast" id="toast"></div>
 
 <script>
-// ================= PLAN (her · 5 days · 2 hard sets · 35–40 min · glutes first) =================
+// ================= PLAN (her · 5 days · 2 hard sets · 35–40 min) =================
+// Agreed rules (24 Oct chat): glutes+hamstrings ~18 sets/wk, quads ~4, side delts ~14, back ~15.
+// No squats, no walking lunges, no inner-thigh or side-glute (abduction) work — those add thigh/hip width.
 // Superset rule: first exercise's rest = rest between the pair; last one's rest = rest after the round.
 const PLAN=[
- {id:"h1",short:"Day 1",name:"Glutes + Back",mins:36,ex:[
+ {id:"h1",short:"Day 1",name:"Glutes + Back",mins:37,ex:[
   {n:"Hip thrust",sets:2,lo:8,hi:10,star:1,rest:120,cue:"Ramp first: 50%×8, 75%×3. Pad the bar, chin tucked, 1 s squeeze at top."},
-  {n:"Lat pulldown",sets:2,lo:8,hi:10,star:1,ss:"A",rest:60,cue:"Wide grip. Back width makes hips look in proportion."},
-  {n:"Cable face pull",sets:2,lo:12,hi:15,ss:"A",rest:75},
-  {n:"DB Romanian deadlift",sets:2,lo:10,hi:12,rest:90,cue:"Hips back, soft knees, feel the hamstring stretch."},
-  {n:"Cable glute kickback",sets:2,lo:12,hi:15,ss:"B",rest:0,cue:"Each leg. Squeeze, don't swing."},
-  {n:"Cable lateral raise",sets:2,lo:12,hi:15,ss:"B",rest:60,cue:"Shoulder width = the top of the hourglass."},
+  {n:"Lat pulldown",sets:2,lo:8,hi:10,star:1,ss:"A",rest:60,cue:"Wide grip. Back width makes the hips look narrower."},
+  {n:"Cable lateral raise",sets:2,lo:12,hi:15,ss:"A",rest:75,cue:"Side shoulders = width up top."},
+  {n:"Cable pull-through",sets:2,lo:12,hi:15,ss:"B",rest:0,cue:"Rope between legs, hips back, stand up by squeezing glutes."},
+  {n:"Hanging knee raise",sets:2,lo:8,hi:15,noKg:1,ss:"B",rest:60,cue:"Slow on the way down."},
+  {n:"Cable glute kickback",sets:2,lo:12,hi:15,ss:"C",rest:0,cue:"Each leg. Squeeze, don't swing."},
+  {n:"Cable face pull",sets:2,lo:12,hi:15,ss:"C",rest:60},
  ]},
- {id:"h2",short:"Day 2",name:"Split squat + Push",mins:35,ex:[
-  {n:"Bulgarian split squat",sets:2,lo:8,hi:10,rest:90,cue:"Ramp 1 set. Each leg. Lean forward slightly to bias the glute."},
-  {n:"Smith incline press",sets:2,lo:8,hi:10,ss:"A",rest:60,cue:"Bench ~30°."},
-  {n:"Cable row",sets:2,lo:10,hi:12,ss:"A",rest:75,cue:"Chest up, don't lean back."},
-  {n:"Cable pull-through",sets:2,lo:12,hi:15,rest:75,cue:"Rope between legs, hips back, snap forward with glutes."},
+ {id:"h2",short:"Day 2",name:"Shoulders + Split squat",mins:37,ex:[
+  {n:"Seated DB shoulder press",sets:2,lo:8,hi:10,star:1,ss:"A",rest:60,cue:"Ramp 1 set first."},
+  {n:"Cable row",sets:2,lo:10,hi:12,ss:"A",rest:90,cue:"Chest up, don't lean back."},
+  {n:"Bulgarian split squat",sets:2,lo:8,hi:10,rest:90,cue:"Each leg. Long stride, lean forward, moderate weight. The week's only real quad move."},
   {n:"Cable lateral raise",sets:2,lo:12,hi:15,ss:"B",rest:0},
-  {n:"Cable crunch",sets:2,lo:10,hi:15,ss:"B",rest:60,cue:"Round the spine, hips still."},
+  {n:"Cable pushdown",sets:2,lo:10,hi:12,ss:"B",rest:60},
+  {n:"DB lateral raise",sets:2,lo:15,hi:20,ss:"C",rest:0,cue:"Light, strict, no swinging."},
+  {n:"Cable crunch",sets:2,lo:10,hi:15,ss:"C",rest:60,cue:"Round the spine, hips still."},
  ]},
- {id:"h3",short:"Day 3",name:"Hamstrings + Shoulders",mins:37,ex:[
+ {id:"h3",short:"Day 3",name:"Hamstrings + Back",mins:37,ex:[
   {n:"Barbell Romanian deadlift",sets:2,lo:8,hi:10,star:1,rest:120,cue:"Ramp first. Heaviest hinge of the week. Stop 1–2 reps short."},
-  {n:"Seated DB shoulder press",sets:2,lo:8,hi:10,ss:"A",rest:60},
-  {n:"Assisted pull-up",sets:2,lo:0,hi:0,kgLabel:"assist",ss:"A",rest:75,cue:"Band-assisted, or slow 5 s lowers. Log reps."},
-  {n:"Walking DB lunge",sets:2,lo:10,hi:12,rest:90,cue:"Each leg. Long stride = more glute, less thigh."},
+  {n:"Assisted pull-up",sets:2,lo:0,hi:0,kgLabel:"assist",ss:"A",rest:60,cue:"Band-assisted, or slow 5 s lowers. Log reps."},
+  {n:"Smith incline press",sets:2,lo:8,hi:10,ss:"A",rest:75,cue:"Bench ~30°."},
+  {n:"Standing cable leg curl",sets:2,lo:12,hi:15,ss:"B",rest:0,cue:"Ankle strap, each leg. Firm line down the back of the thigh."},
+  {n:"Cable lateral raise",sets:2,lo:12,hi:15,ss:"B",rest:60},
+  {n:"Single-arm cable row",sets:2,lo:10,hi:12,ss:"C",rest:0,cue:"Each side."},
+  {n:"Hammer curl",sets:2,lo:10,hi:12,ss:"C",rest:60},
+ ]},
+ {id:"h4",short:"Day 4",name:"Glutes + Shoulders",mins:37,ex:[
+  {n:"Smith hip thrust, paused",sets:2,lo:10,hi:12,rest:90,cue:"Ramp 1 set. Lighter than Day 1, 2 s hold at the top."},
+  {n:"Smith overhead press",sets:2,lo:8,hi:10,ss:"A",rest:60},
+  {n:"Lat pulldown, close grip",sets:2,lo:10,hi:12,ss:"A",rest:75},
+  {n:"DB step-up",sets:2,lo:10,hi:12,rest:75,cue:"Each leg. Knee-height bench, push through the heel, moderate weight."},
   {n:"Cable lateral raise",sets:2,lo:12,hi:15,ss:"B",rest:0},
-  {n:"Cable pushdown",sets:2,lo:10,hi:12,ss:"B",rest:60,cue:"Back of the arm."},
+  {n:"Cable face pull",sets:2,lo:12,hi:15,ss:"B",rest:60},
+  {n:"DB lateral raise",sets:2,lo:15,hi:20,ss:"C",rest:0},
+  {n:"Hanging knee raise",sets:2,lo:8,hi:15,noKg:1,ss:"C",rest:60},
  ]},
- {id:"h4",short:"Day 4",name:"Glutes + Back",mins:35,ex:[
-  {n:"Smith B-stance hip thrust",sets:2,lo:10,hi:12,rest:90,cue:"Ramp 1 set. Each leg. Working foot flat, other on its heel."},
-  {n:"Cable row, wide grip",sets:2,lo:10,hi:12,ss:"A",rest:60,cue:"Elbows out, squeeze shoulder blades."},
-  {n:"DB incline press",sets:2,lo:10,hi:12,ss:"A",rest:75},
-  {n:"Kettlebell swing",sets:2,lo:15,hi:20,rest:75,cue:"Hinge, not squat. Snap hips. Arms just hold on."},
-  {n:"Cable hip abduction",sets:2,lo:12,hi:15,ss:"B",rest:0,cue:"Ankle strap, each leg. Upper-side glute."},
-  {n:"Hanging knee raise",sets:2,lo:8,hi:15,noKg:1,ss:"B",rest:60,cue:"Slow down, no swinging."},
- ]},
- {id:"h5",short:"Day 5",name:"Squat + Upper",mins:36,ex:[
-  {n:"Smith squat",sets:2,lo:8,hi:10,star:1,rest:120,cue:"Ramp 1 set. Feet slightly forward, sit deep. Stop 1–2 short."},
-  {n:"Lat pulldown, close grip",sets:2,lo:10,hi:12,ss:"A",rest:60},
-  {n:"Smith overhead press",sets:2,lo:8,hi:10,ss:"A",rest:75},
-  {n:"DB step-up",sets:2,lo:10,hi:12,rest:75,cue:"Each leg. Knee-height box, push through the heel."},
-  {n:"Cable face pull",sets:2,lo:12,hi:15,ss:"B",rest:0},
-  {n:"Pallof press",sets:2,lo:12,hi:12,fn:1,ss:"B",rest:45,cue:"Each side. Press out, hold 2 s."},
+ {id:"h5",short:"Day 5",name:"Hinge + Upper",mins:33,ex:[
+  {n:"DB Romanian deadlift",sets:2,lo:10,hi:12,rest:90,cue:"Ramp 1 set. Hips back, soft knees, feel the stretch."},
+  {n:"DB flat press",sets:2,lo:8,hi:10,ss:"A",rest:60},
+  {n:"Single-arm DB row",sets:2,lo:10,hi:12,ss:"A",rest:75,cue:"Each side."},
+  {n:"Kettlebell swing",sets:2,lo:15,hi:20,rest:75,cue:"Hinge, not squat. Snap the hips; arms just hold on."},
+  {n:"Cable glute kickback",sets:2,lo:12,hi:15,ss:"B",rest:0,cue:"Each leg."},
+  {n:"Cable lateral raise",sets:2,lo:12,hi:15,ss:"B",rest:60},
  ]},
  {id:"int",short:"Intervals",name:"Intervals (optional)",mins:16,ex:[
   {n:"Bike, hill or KB swings · 30 s hard / 90 s easy",sets:1,unit:"rounds",lo:8,hi:8,kgLabel:"mins",fn:1,rest:0},
@@ -234,7 +242,7 @@ const ORDER=["h1","h2","h3","h4","h5"];
 const LEGACY={};
 const dayInfo=id=>PLAN.find(d=>d.id===id)||LEGACY[id]||{short:id,name:""};
 const CAP=40; // minutes before the timer turns amber
-const HABITS=[["gym","Gym","var(--teal)"],["protein","Protein","var(--blue)"],["sleep","Sleep 7h+","var(--violet)"],["diet","Diet on plan","var(--amber)"]];
+const HABITS=[["gym","Gym","var(--teal)"],["protein","Protein","var(--blue)"],["steps","Steps 8k+","#0891B2"],["sleep","Sleep 7h+","var(--violet)"],["diet","Diet on plan","var(--amber)"]];
 const ICON={check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
  log:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9v6M8 6v12M16 6v12M20 9v6M8 12h8"/></svg>',
  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
@@ -243,7 +251,9 @@ const ICON={check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 // ================= STORAGE =================
 const KEY="lift-her:v1"; // separate from Aryan's app — both live on the same website, which shares storage
-let DB={sessions:[],days:{},weekly:[],targets:{gym:5,protein:5,sleep:5,diet:5},draft:null,lastDay:null,protein:{},ptarget:90,phit:80,ver:3};
+// Starting point (24 Oct): 53.5 kg; waist/hips from tailor numbers with the tailor's extra allowance removed
+// (ghagra waist 31.5" − 1.5" = 30" ≈ 76 cm, hips 45" − 6" = 39" ≈ 99 cm). Re-measure with a plain tape and save over this date.
+let DB={sessions:[],days:{},weekly:[{date:"2026-10-24",bw:"53.5",waist:"76",hip:"99"}],targets:{gym:5,protein:5,steps:5,sleep:5,diet:5},draft:null,lastDay:null,protein:{},ptarget:100,phit:90,ver:3};
 function load(){try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);const fresh=DB;DB={...DB,...o,targets:{...DB.targets,...(o.targets||{})},protein:o.protein||{}};
   if(!o.ver||o.ver<3){ // one-time move to the 5-day plan
     if(DB.targets.gym===4)DB.targets.gym=5;DB.ptarget=o.ptarget||fresh.ptarget;DB.phit=o.phit||fresh.phit;DB.ver=3;save()}}}catch(e){}}
@@ -294,7 +304,7 @@ function beep(){try{if(!actx)return;const t=actx.currentTime;[0,.18,.36].forEach
 function renderHdr(){
   if(tab==="log"){const day=PLAN.find(d=>d.id===W.day);return`<div><h1>${day.name}</h1><div class="sub"><span id="elapsed">${W.start?mmss(Math.floor((Date.now()-W.start)/1000)):"Not started"}</span> · budget ${day.mins} min · <button data-act="date" style="color:var(--teal);font-weight:600">${fmt(W.date)}</button></div></div><button class="act" data-act="finish">Finish</button>`}
   if(tab==="prot")return`<div><h1>Protein</h1><div class="sub">Target ${DB.ptarget} g · counts as a hit at ${DB.phit} g</div></div>`;
-  if(tab==="cal")return`<div><h1>Consistency</h1><div class="sub">Four things a day. That's the whole game.</div></div>`;
+  if(tab==="cal")return`<div><h1>Consistency</h1><div class="sub">Five things a day. That's the whole game.</div></div>`;
   return`<div><h1>Progress</h1><div class="sub">Top-set lifts, body, history</div></div>`;
 }
 function renderLog(){
@@ -408,11 +418,11 @@ function renderCal(){
   h+=`</div><div class="legend">${HABITS.map(([,l,c])=>`<span><i style="background:${c}"></i>${l}</span>`).join("")}</div></div>`;
   // 13-week summary
   const T=DB.targets,weeks=[];let mon=mondayOf(t);for(let i=0;i<13;i++){weeks.push(mon);const d=new Date(mon+"T00:00");d.setDate(d.getDate()-7);mon=iso(d)}
-  const stats=weeks.map(w=>{const c={gym:0,protein:0,sleep:0,diet:0};let any=false;for(let i=0;i<7;i++){const d=new Date(w+"T00:00");d.setDate(d.getDate()+i);const dv=DB.days[iso(d)];if(dv){any=true;HABITS.forEach(([k])=>{if(dv[k])c[k]++})}}return{w,c,any}});
+  const stats=weeks.map(w=>{const c={gym:0,protein:0,steps:0,sleep:0,diet:0};let any=false;for(let i=0;i<7;i++){const d=new Date(w+"T00:00");d.setDate(d.getDate()+i);const dv=DB.days[iso(d)];if(dv){any=true;HABITS.forEach(([k])=>{if(dv[k])c[k]++})}}return{w,c,any}});
   const act=stats.filter(s=>s.any),hit=k=>act.filter(s=>s.c[k]>=T[k]).length;
   h+=`<div class="card"><b style="font-size:17px">Last 13 weeks</b><div class="hint">Weeks that hit the target, out of ${act.length} logged.</div>
   <div class="big">${HABITS.map(([k,l])=>`<div><div class="n">${act.length?hit(k):"–"}<span style="font-size:14px;color:var(--ink3)">/${act.length||13}</span></div><div class="l">${l.split(" ")[0]} ${T[k]}+</div></div>`).join("")}</div>
-  <div class="wk h"><div>Week</div><div>Gym</div><div>Prot</div><div>Sleep</div><div>Diet</div></div>
+  <div class="wk h"><div>Week</div><div>Gym</div><div>Prot</div><div>Steps</div><div>Sleep</div><div>Diet</div></div>
   ${stats.map(s=>`<div class="wk"><div style="text-align:left;color:var(--ink2);font-size:13px">${fmt(s.w)}</div>${HABITS.map(([k])=>`<div class="${s.any&&s.c[k]>=T[k]?"hit":"miss"}">${s.any?s.c[k]:"·"}</div>`).join("")}</div>`).join("")}
   <h3>Weekly targets (days)</h3><div class="tgt">${HABITS.map(([k,l])=>`<label>${l.split(" ")[0]}<input inputmode="numeric" data-tgt="${k}" value="${T[k]}"></label>`).join("")}</div></div>`;
   return h;
@@ -431,7 +441,7 @@ function renderProg(){
   const ws=[...DB.weekly].sort((a,b)=>a.date<b.date?-1:1),f=ws[0],l=ws[ws.length-1];
   const M=[["waist","waist"],["hip","hips"],["thigh","thigh"]];
   const chg=k=>{const z=ws.filter(x=>x[k]);return z.length>1?(Number(z[z.length-1][k])-Number(z[0][k])).toFixed(1):null};
-  h+=`<div class="card"><b style="font-size:17px">Weight & measurements</b><div class="hint">Weight weekly. Tape monthly, same morning routine: waist at navel, hips at the widest point, thigh at the widest point of the right leg. Expect weight roughly flat, hips to hold or rise as glutes build, thigh to change slowly.</div>
+  h+=`<div class="card"><b style="font-size:17px">Weight & measurements</b><div class="hint">Weight: 3 mornings a week, save the average on Sunday. Tape every 2 weeks, plain tape, no tailor allowance: waist at the belly button, hips at the widest point, right thigh at its widest point. Thigh is the main number. Aim ≈ 0.3 kg/week down; hips/thigh change from about week 8.</div>
   <div class="frow"><input type="date" id="wdate" value="${today()}" style="font-size:14px"><input inputmode="decimal" id="wbw" placeholder="kg"><input inputmode="decimal" id="wwaist" placeholder="waist cm"></div>
   <div class="frow" style="grid-template-columns:1fr 1fr"><input inputmode="decimal" id="whip" placeholder="hips cm"><input inputmode="decimal" id="wthigh" placeholder="thigh cm"></div><button class="btn wide ghost" data-act="saveW">Save</button>`;
   if(f&&l&&f!==l){const parts=[["bw","weight","kg"],...M.map(([k,lb])=>[k,lb,"cm"])].map(([k,lb,u])=>{const c=chg(k);return c===null?null:`${lb} <b>${c>0?"+":""}${c} ${u}</b>`}).filter(Boolean);
