@@ -211,7 +211,7 @@ const PLAN=[
   {n:"Pull-ups",sets:2,lo:0,hi:0,kgLabel:"assist",ss:"A",rest:90,cue:"Go to 0–1 reps left."},
   {n:"Barbell Romanian deadlift",sets:2,lo:6,hi:8,star:1,rest:120,cue:"Leg move — done before rows so grip is fresh. Stop 1–2 short."},
   {n:"Smith overhead press",sets:2,lo:6,hi:8,ss:"B",rest:60},
-  {n:"Single-arm DB row",sets:2,lo:8,hi:10,ss:"B",rest:90,cue:"Each side."},
+  {n:"Single-arm cable row",sets:2,lo:8,hi:10,ss:"B",rest:90,cue:"Each side. Pulley at chest height, elbow to hip, 1 s pause, slow return."},
   {n:"Cable lateral raise",sets:2,lo:12,hi:15,ss:"C",rest:0},
   {n:"Pallof press",sets:2,lo:12,hi:12,fn:1,ss:"C",rest:45,cue:"Each side. Press out, hold 2 s."},
  ]},
@@ -287,6 +287,8 @@ function pRemove(d,i){const l=pList(d);if(!l.length)return;l.splice(i,1);if(!l.l
 let tab="log",calMonth=today().slice(0,7),selDay=today(),pDay=today();
 let W=DB.draft&&DB.draft.date===today()&&PLAN.some(d=>d.id===DB.draft.day)?DB.draft:null; // in-progress workout
 if(!W)W=newWorkout(nextDay());
+// A plan edit can rename an exercise mid-draft; give any missing one blank sets so the screen still opens.
+{const d=PLAN.find(x=>x.id===W.day);d.ex.forEach(e=>{if(!W.ex[e.n])W.ex[e.n]={sets:Array.from({length:e.sets},()=>({k:"",r:"",d:false}))}})}
 function newWorkout(dayId){const day=PLAN.find(d=>d.id===dayId);const ex={};
   day.ex.forEach(e=>{const prev=lastEx(e.n);ex[e.n]={sets:Array.from({length:e.sets},(_,i)=>{const ps=prev?.sets?.[i];return{k:ps?.k??"",r:ps?.r??"",d:false}})}});
   return{day:dayId,date:today(),ex,note:"",start:null,warm:[false,false,false]}}
